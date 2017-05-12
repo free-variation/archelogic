@@ -10,6 +10,6 @@
    [edu.stanford.nlp/stanford-corenlp "3.7.0"]
    [edu.stanford.nlp/stanford-corenlp "3.7.0" :classifier "models"]]
   
-  :jvm-opts  ["-server" "-Xmx1g"
+  :jvm-opts  ["-server" "-Xmx2g"
               "-XX:+UnlockCommercialFeatures" "-XX:+FlightRecorder"])
       
