@@ -35,3 +35,26 @@ using the NN shift-reduce parser"
     (if (some #{:collapse} options)
       (.get sentence SemanticGraphCoreAnnotations$CollapsedCCProcessedDependenciesAnnotation)
       (.get sentence SemanticGraphCoreAnnotations$BasicDependenciesAnnotation))))
+
+(defn flatten-indexed-word
+  "Converts an IndexedWord to a simple tuple"
+  [word]
+  (list 'word
+        (.index word)
+        (.word word)
+        (.lemma word)
+        (.tag word)))
+
+(defn flatten-deppgraph
+  "Takes a CoreNLP dependency graph, returning a lazy list of relations."
+  [dep-graph]
+  (map
+    (fn [dep-rel]
+      (let [gov (flatten-indexed-word (.gov dep-rel))
+            dep (flatten-indexed-word (.dep dep-rel))
+            reln (.reln dep-rel)]
+        (list 'rel
+              (.getShortName reln)
+              gov
+              dep)))
+    (.typedDependencies dep-graph)))
