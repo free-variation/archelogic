@@ -19,6 +19,7 @@
                         (.write w sentence)
                         (.write w "\", [")
                         (doseq [rel relations]
+                          (.write w "\n\t")
                           (.write w (u/sexpr2pred rel))
                           (.write w ","))
                         (.write w (str idx))
