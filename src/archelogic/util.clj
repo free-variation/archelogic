@@ -10,5 +10,5 @@
     (let [head (first s-expr)
           args (map sexpr2pred (rest s-expr))]
       (str head "(" (s/join "," args) ")"))
-    (str "\"" s-expr "\"")))
+    (str "'" s-expr "'")))
   

@@ -1,2 +1,4 @@
 John runs.
 John knows a unicorn that he likes.
+runs.
+John knows Mary.
