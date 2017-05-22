@@ -1,3 +1,4 @@
+:- use_module(library(apply)).
 :- use_module(library(yall)).
 
 
@@ -12,18 +13,23 @@ down([_]>>Formula, Term) :-
 	append(TermAtoms, [_], Atoms), 
 	Term =.. TermAtoms, !.
 
+% the marked form of functional application 
+% for handling existentially-closed arguments
+f(Lambda, Arg, Reduced) :-
+	Arg = {X}/Formula, !,
+	lambda_calls(Lambda, [X], Applied),
+	Reduced = {X}/(Formula, Applied).
+
 f(Lambda, Arg, Reduced) :-
 	lambda_calls(Lambda, [Arg], Reduced).
 
 % Build Expression
 
 relations_of_type(Type, Relations, RelationsOfType) :-
-	Includer = [Rel]>>(Rel=rel(Type, _, _)),
-	include(Includer, Relations, RelationsOfType).
+	include({Type}/[Rel]>>(Rel=rel(Type, _, _)), Relations, RelationsOfType).
 
 relations_for_governor(WordIndex, Relations, RelationsForGovernor) :-
-	IncludePrer = [Rel]>>(Rel=rel(_, word(WordIndex, _, _, _), _)),
-	include(IncludePrer, Relations, RelationsForGovernor).
+	include({WordIndex}/[Rel]>>(Rel=rel(_, word(WordIndex, _, _, _), _)), Relations, RelationsForGovernor).
 
 logical_form(Relations, LogicalForm) :-
 	is_list(Relations),
@@ -39,7 +45,7 @@ logical_form(rel(_, _, word(_, Form, _, _)), _, Form).
 
 predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 	Word2 = word(_, Predicate, _, _),
-	
+
 	% test if there's an object 
 	ObjectRel = rel(dobj, Word2, _),
 	(	member(ObjectRel, Relations) ->

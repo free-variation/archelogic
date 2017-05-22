@@ -2,7 +2,7 @@
 
 test(parses) :-
 	findall(Id, parse(Id, _, _), Ids),
-	length(Ids, 4).
+	length(Ids, 5).
 
 test(up) :-
 	up(runs, [X]>>runs(X)).
@@ -47,5 +47,13 @@ test(logical_form_iv) :-
 test(logical_form_tv) :-
 	parse(3, _, Rels),
 	logical_form(Rels, knows('Mary', 'John')).
+
+test(f) :-
+	up(runs, L),
+	f(L, john, runs(john)).
+
+test(f_existential) :-
+	up(likes, L),
+	f(L, {X}/(unicorn(X), green(X)), {X}/((unicorn(X), green(X)), likes(X))).
 
 :- end_tests(logical_form).
