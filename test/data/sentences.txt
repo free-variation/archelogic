@@ -2,4 +2,4 @@ John runs.
 John knows a unicorn that he likes.
 runs.
 John knows Mary.
-John knows the man who drinks tea.
+John knows Mary who drinks tea.

@@ -4,22 +4,6 @@ test(parses) :-
 	findall(Id, parse(Id, _, _), Ids),
 	length(Ids, 5).
 
-test(up) :-
-	up(runs, [X]>>runs(X)).
-
-test(up_down) :-
-	up(runs, L),
-	down(L, runs).
-
-test(up_up) :-
-	up(drinks, L), 
-	f(L, water, M), 
-	up(M, N), 
-	f(N, john, drinks(water, john)).
-
-test(down) :-
-	down([_]>>runs(_), _).
-
 test(relations_of_type) :-
 	parse(0, _, Rels),
 	relations_of_type('nsubj', Rels, [rel('nsubj',word('2','runs','run','VBZ'),word('1','John','John','NNP'))]),
@@ -42,18 +26,20 @@ test(logical_form_n) :-
 
 test(logical_form_iv) :-
 	parse(0, _, Rels),
-	logical_form(Rels, runs('John')).
+	logical_form(Rels, {X}/([runs(X), subject(X, 'John') | F]-F)). 
 
 test(logical_form_tv) :-
 	parse(3, _, Rels),
-	logical_form(Rels, knows('Mary', 'John')).
+	logical_form(Rels, {X}/([knows(X), subject(X, 'John'), object(X, 'Mary') | F]-F)).
 
 test(f) :-
-	up(runs, L),
-	f(L, john, runs(john)).
+	f(runs, john, runs(john)).
 
 test(f_existential) :-
-	up(likes, L),
-	f(L, {X}/(unicorn(X), green(X)), {X}/((unicorn(X), green(X)), likes(X))).
+	f(likes, {X}/([unicorn(X), green(X) | F]-F), {X}/([unicorn(X), green(X), likes(X) | F]-F)).
+
+test(logical_form_subject_relative) :-
+	parse(4, _, Rels),
+	logical_form(Rels, {X, Y, Z}/[knows(X), subject(X, 'John'), object(X, Y), Y = 'Mary', likes(Z), subject(Z, Y), object(Z, tea)]).
 
 :- end_tests(logical_form).
