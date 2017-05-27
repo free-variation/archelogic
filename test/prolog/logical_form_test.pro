@@ -22,15 +22,15 @@ test(relations_for_governor) :-
 
 test(logical_form_n) :-
 	parse(2, _, Rels),
-	logical_form(Rels, 'runs').
+	logical_form(Rels, cnf([], [runs])).
 
 test(logical_form_iv) :-
 	parse(0, _, Rels),
-	logical_form(Rels, {X}/([runs(X), subject(X, 'John') | F]-F)). 
+	logical_form(Rels, cnf([X], [runs(X), subject(X, 'John')])). 
 
 test(logical_form_tv) :-
 	parse(3, _, Rels),
-	logical_form(Rels, {X}/([knows(X), subject(X, 'John'), object(X, 'Mary') | F]-F)).
+	logical_form(Rels, cnf([X], [knows(X), subject(X, 'John'), object(X, 'Mary')])).
 
 test(f) :-
 	f(runs, john, runs(john)).
@@ -40,6 +40,7 @@ test(f_existential) :-
 
 test(logical_form_subject_relative) :-
 	parse(4, _, Rels),
-	logical_form(Rels, {X, Y, Z}/[knows(X), subject(X, 'John'), object(X, Y), Y = 'Mary', likes(Z), subject(Z, Y), object(Z, tea)]).
+	logical_form(Rels, cnf([E, X, E1], Terms)),
+	permutation(Terms, [knows(E), subject(E, 'John'), object(E, X), 'Mary'=X, drinks(E1), subject(E1, X), object(E1, tea)]), !.
 
 :- end_tests(logical_form).
