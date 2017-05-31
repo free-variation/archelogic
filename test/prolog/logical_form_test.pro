@@ -43,4 +43,9 @@ test(logical_form_subject_relative) :-
 	logical_form(Rels, cnf([E, X, E1], Terms)),
 	permutation(Terms, [knows(E), subject(E, 'John'), object(E, X), 'Mary'=X, drinks(E1), subject(E1, X), object(E1, tea)]), !.
 
+test(logical_form_object_relative) :-
+	parse(1, _, Rels),
+	logical_form(Rels, cnf([E, X, E1], Terms)),
+	permutation(Terms, [knows(E), subject(E, 'John'), unicorn(X), likes(E1), subject(E1, he), object(E1, X), object(E, X)]), !.
+
 :- end_tests(logical_form).
