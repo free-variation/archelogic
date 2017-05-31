@@ -132,11 +132,17 @@ relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF) :-
 
 dp([], _, LogicalForm, LogicalForm).
 
+% relative clause
 dp([Rel | Rels], Relations, {X}/LF, LogicalForm) :-
  	Rel = rel('acl:relcl', _, _),
  	relative_clause(Rel, Relations, X, {_}/RelativeClauseLF),
  	join(LF, RelativeClauseLF, LF1),
  	dp(Rels, Relations, {X}/LF1, LogicalForm).
+
+ % determiner
+ dp([Rel | Rels], Relations, {X}/LF, LogicalForm) :-
+ 	Rel = rel('det', _, _),
+ 	dp(Rels, Relations, {X}/LF, LogicalForm).
 
 
 
