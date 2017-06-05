@@ -2,31 +2,40 @@
 :- use_module(library(yall)).
 
 
+debug(Value) :-
+	nl, print(">>>>"),nl, 
+	print(Value),
+	nl, print("<<<<"),nl.
+
 join(I-J, J-K, I-K).
 
 % the marked form of functional application 
 % for handling existentially-closed arguments
 f(Functor, Arg, Result) :-
 	nonvar(Arg),
-	Arg = ([X | T]-T)^Formula, !,
+	Arg = Vars^Formula, !,
+	Vars = [X | _]-_,
 	f(Functor, X, Result1),
 	join(Formula, [Result1 | F]-F, Formula1),
-	Result = ([X | T]-T)^Formula1.
+	Result = Vars^Formula1.
 
 f(Functor, Arg, Result) :-
 	Result =.. [Functor, Arg].
+
 
 % two-place functors
 % marked case where the second argument is existentially-closed.
 f(Functor, Arg1, Arg2, Result) :-
 	nonvar(Arg2),
-	Arg2 = ([X | T]-T)^Formula, !,
+	Arg2 = Vars^Formula, !,
+	Vars = [X | _]-_,
 	f(Functor, Arg1, X, Result1),
 	join(Formula, [Result1 | F]-F, Formula1),
-	Result = ([X | T]-T)^Formula1.
+	Result = Vars^Formula1.
 
 f(Functor, Arg1, Arg2, Result) :-
 	Result =.. [Functor, Arg1, Arg2].
+
 
 relations_of_type(Type, Relations, RelationsOfType) :-
 	include({Type}/[Rel]>>(Rel=rel(Type, _, _)), Relations, RelationsOfType).
@@ -166,13 +175,6 @@ dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
 
 
 
-
-
-
-
-
-
-	
 
 
 
