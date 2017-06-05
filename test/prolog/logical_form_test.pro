@@ -36,7 +36,7 @@ test(f) :-
 	f(runs, john, runs(john)).
 
 test(f_existential) :-
-	f(likes, {X}/([unicorn(X), green(X) | F]-F), {X}/([unicorn(X), green(X), likes(X) | F]-F)).
+	f(likes, X^([unicorn(X), green(X) | F]-F), X^([unicorn(X), green(X), likes(X) | F]-F)).
 
 test(logical_form_subject_relative) :-
 	parse(4, _, Rels),
