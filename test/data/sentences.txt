@@ -3,3 +3,4 @@ John knows a unicorn that he likes.
 runs.
 John knows Mary.
 John knows Mary who drinks tea.
+All cats are grey.

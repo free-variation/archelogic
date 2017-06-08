@@ -3,18 +3,25 @@
 
 
 debug(Value) :-
-	nl, print(">>>>"),nl, 
+	nl, print('DEBUG '),
 	print(Value),
-	nl, print("<<<<"),nl.
+	nl.
 
 join(I-J, J-K, I-K).
+
+and(A, B, Formula) :-
+	Formula =.. [',', A, B].
+
+or(A, B, Formula) :-
+	Formula =.. [';', A, B].
+
 
 % the marked form of functional application 
 % for handling existentially-closed arguments
 f(Functor, Arg, Result) :-
 	nonvar(Arg),
 	Arg = Vars^Formula, !,
-	Vars = [X | _]-_,
+	Vars = [X | _],
 	f(Functor, X, Result1),
 	join(Formula, [Result1 | F]-F, Formula1),
 	Result = Vars^Formula1.
@@ -28,7 +35,7 @@ f(Functor, Arg, Result) :-
 f(Functor, Arg1, Arg2, Result) :-
 	nonvar(Arg2),
 	Arg2 = Vars^Formula, !,
-	Vars = [X | _]-_,
+	Vars = [X | _],
 	f(Functor, Arg1, X, Result1),
 	join(Formula, [Result1 | F]-F, Formula1),
 	Result = Vars^Formula1.
@@ -43,11 +50,16 @@ relations_of_type(Type, Relations, RelationsOfType) :-
 relations_for_governor(WordIndex, Relations, RelationsForGovernor) :-
 	include({WordIndex}/[Rel]>>(Rel=rel(_, word(WordIndex, _, _, _), _)), Relations, RelationsForGovernor).
 
+member_object(X, List) :-
+	List = [L | Rest],
+	(	X == L
+	;	member_object(X, Rest)
+	).
+
 raise_universal_q(X^(Terms-_), Vars) :-
-	!,
-	maplist(raise_universal_q, Terms, V),
+	maplist(raise_universal_q, Terms, V),!,
 	flatten(V, V1),
-	exclude({X}/[Y]>>(X==Y), V1, V2),
+	exclude({X}/[Y]>>member_object(Y,X), V1, V2),
 	list_to_set(V2, Vars).
 
 raise_universal_q(Term, Vars) :-
@@ -73,12 +85,10 @@ cnf(LogicalForm, cnf(Vars, FlatTerms)) :-
 	flatten(BareTerms, FlatTerms).
 	
 
-logical_form(Relations, CNF) :-
+logical_form(Relations, LogicalForm) :-
 	is_list(Relations),
 	relations_of_type(root, Relations, [RootRelation]),
-	logical_form(RootRelation, Relations, LogicalForm),
-	CNF = LogicalForm.
-	%cnf(LogicalForm, CNF).
+	logical_form(RootRelation, Relations, LogicalForm).
 
 logical_form(RootRel, Relations, LogicalForm) :-
 	RootRel = rel(root, _, _),
@@ -103,9 +113,9 @@ predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 	(	member(ObjectRel, PredRelations) ->
 		(	nominal(ObjectRel, Relations, ObjectLF),
 			f(object, E, ObjectLF, Object),
-			LogicalForm = ([E | T1]-T1)^([Predicated, Subject, Object | T]-T)
+			LogicalForm =  [E]^([Predicated, Subject, Object | T]-T)
 		)
-	;	LogicalForm = ([E | T1]-T1)^([Predicated, Subject | T]-T)
+	;	LogicalForm = [E]^([Predicated, Subject | T]-T)
 	).
 
 
@@ -123,7 +133,7 @@ nominal(rel(_, _, Word2), Relations, LogicalForm) :-
 		LF = (Head = X)
 	;	LF =.. [Head, X]
 	),
-	dp(HeadRels, Relations, ([X | T1]-T1)^([LF | T]-T), LogicalForm).
+	dp(HeadRels, Relations, [X]^([LF | T]-T), LogicalForm).
 
 is_pronominal(word(_, _, _, 'WP')).
 is_pronominal(word(_, _, _, 'IN')).  % very unfortunate side-effect of dep parser.
@@ -151,9 +161,9 @@ relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF) :-
 			;	nominal(ObjectRel, Relations, ObjectLF)
 			),
 			f(object, E, ObjectLF, Object),
-			RelativeClauseLF = ([E | T1]-T1)^([Predicated, Subject, Object | T]-T)
+			RelativeClauseLF = [E]^([Predicated, Subject, Object | T]-T)
 		)
-	;	RelativeClauseLF = ([E | T1]-T1)^([Predicated, Subject | T]-T)
+	;	RelativeClauseLF = [E]^([Predicated, Subject | T]-T)
 	).
 	
 
@@ -162,16 +172,23 @@ dp([], _, LogicalForm, LogicalForm).
 % relative clause
 dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
  	Rel = rel('acl:relcl', _, _),
- 	X = [Y | _]-_,
+ 	X = [Y | _],
  	relative_clause(Rel, Relations, Y, E^RelativeClauseLF),
  	join(LF, RelativeClauseLF, LF1),
- 	join(X, E, Vars),
+ 	append(X, E, Vars),
  	dp(Rels, Relations, Vars^LF1, LogicalForm).
 
- % determiner
- dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
- 	Rel = rel('det', _, _),
- 	dp(Rels, Relations, X^LF, LogicalForm).
+
+% determiner: all
+dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+	Rel = rel('det', _, word(_, _, all, 'DT')),
+	dp(Rels, Relations, X^LF, LogicalForm).
+
+
+% determiner: default (do nothing)
+dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+	Rel = rel('det', _, _),
+	dp(Rels, Relations, X^LF, LogicalForm).
 
 
 
