@@ -9,11 +9,22 @@ debug(Value) :-
 
 join(I-J, J-K, I-K).
 
-and(A, B, Formula) :-
-	Formula =.. [',', A, B].
+call_if_beta_convert(F, F1) :-
+	nonvar(F),
+	F = beta_convert(Lambda, Vars, _),
+	!,
+	beta_convert(Lambda, Vars, F1).
 
-or(A, B, Formula) :-
-	Formula =.. [';', A, B].
+call_if_beta_convert(F, F).
+
+beta_convert(U/V>>F, Vars, Goal) :-
+	!,
+	F =.. [Functor | Args],
+	maplist(call_if_beta_convert, Args, Args1),
+	F1 =.. [Functor | Args1],
+	lambda_calls(U/V>>F1, Vars, Goal).
+
+% S ={X}/[P]>>(not(X);beta_convert(P,[X],O)), P={}/[Y]>>E^(runs(E), subject(E,Y)),beta_convert(S, [P], Q).
 
 
 % the marked form of functional application 
@@ -113,9 +124,9 @@ predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 	(	member(ObjectRel, PredRelations) ->
 		(	nominal(ObjectRel, Relations, ObjectLF),
 			f(object, E, ObjectLF, Object),
-			LogicalForm =  [E]^([Predicated, Subject, Object | T]-T)
+			LogicalForm =  [E]^(Predicated, Subject, Object)
 		)
-	;	LogicalForm = [E]^([Predicated, Subject | T]-T)
+	;	LogicalForm = [E]^(Predicated, Subject)
 	).
 
 
@@ -133,7 +144,7 @@ nominal(rel(_, _, Word2), Relations, LogicalForm) :-
 		LF = (Head = X)
 	;	LF =.. [Head, X]
 	),
-	dp(HeadRels, Relations, [X]^([LF | T]-T), LogicalForm).
+	dp(HeadRels, Relations, [X]^LF, LogicalForm).
 
 is_pronominal(word(_, _, _, 'WP')).
 is_pronominal(word(_, _, _, 'IN')).  % very unfortunate side-effect of dep parser.
@@ -161,9 +172,9 @@ relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF) :-
 			;	nominal(ObjectRel, Relations, ObjectLF)
 			),
 			f(object, E, ObjectLF, Object),
-			RelativeClauseLF = [E]^([Predicated, Subject, Object | T]-T)
+			RelativeClauseLF = [E]^(Predicated, Subject, Object)
 		)
-	;	RelativeClauseLF = [E]^([Predicated, Subject | T]-T)
+	;	RelativeClauseLF = [E]^(Predicated, Subject)
 	).
 	
 
