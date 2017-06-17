@@ -113,16 +113,7 @@ root_predicate(Rel, Relations, LogicalForm) :-
 	nominal(SubjectRel, Relations, SubjectLF),
 
 	predicate(Rel, Relations, PredicateLF),
-	lambda_reduce(SubjectLF, [PredicateLF], LogicalForm).
-
-	%% ObjectRel = rel(dobj, Word2, _),
-	%% (	member(ObjectRel, PredRelations) ->
-	%% 	(	nominal(ObjectRel, Relations, ObjectLF),
-	%% 		f(object, E, ObjectLF, Object),
-	%% 		LogicalForm =  [E]^(Predicated, Subject, Object)
-	%% 	)
-	%% ;	LogicalForm = [E]^(Predicated, Subject)
-	%% ).
+	LogicalForm = beta(SubjectLF, [PredicateLF]).
 
 
 % ----- Nominal Expressions ---
@@ -135,8 +126,8 @@ nominal(rel(_, _, Word2), Relations, LogicalForm) :-
 	;	LF =.. [Head, X]
 	),
 	(	HeadRels = [] ->
-		LogicalForm = {}/[P]>>([X]^(LF, beta(P, [X]))) 
-	;	dp(HeadRels, Relations, [X]^LF, LogicalForm)
+		LogicalForm = {}/[P]>>(X^(LF, beta(P, [X]))) 
+	;	dp(HeadRels, Relations, X^LF, LogicalForm)
 	).
 
 is_pronominal(word(_, _, _, 'WP')).

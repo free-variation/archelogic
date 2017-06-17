@@ -24,4 +24,15 @@ test(logical_form_n) :-
 	parse(2, _, Rels),
 	logical_form(Rels, runs).
 
+test(logical_form_iv) :-
+	parse(0, _, Rels),
+	logical_form(Rels, LF),
+	LF = beta({}/[P]>>_X^('John'=X, beta(P, [X])), [{}/[Y]>>E^(runs(E), subject(E, Y))]).
+
+test(logical_form_iv_reduced) :-
+	parse(0, _, Rels),
+	logical_form(Rels, LF),
+	lambda_reduce(LF, RedLF),
+	RedLF = X^('John'=X, E^(runs(E), subject(E, X))).
+
 :- end_tests(logical_form).
