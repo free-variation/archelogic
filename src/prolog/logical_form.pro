@@ -7,52 +7,45 @@ debug(Value) :-
 	print(Value),
 	nl.
 
-join(I-J, J-K, I-K).
-
-call_if_beta_convert(F, F1) :-
+lambda_reduce(F, Goal) :-
 	nonvar(F),
-	F = beta_convert(Lambda, Vars, _),
-	!,
-	beta_convert(Lambda, Vars, F1).
+	F = beta(Lambda, Vars), 
+	is_lambda(Lambda), !,
+	lambda_calls(Lambda, Vars, ReducedLambda),
+	lambda_reduce(ReducedLambda, Goal).
 
-call_if_beta_convert(F, F).
+lambda_reduce(F, F) :- 
+	nonvar(F),
+	F = [], !.
 
-beta_convert(U/V>>F, Vars, Goal) :-
-	!,
-	F =.. [Functor | Args],
-	maplist(call_if_beta_convert, Args, Args1),
-	F1 =.. [Functor | Args1],
-	lambda_calls(U/V>>F1, Vars, Goal).
+lambda_reduce(F, F) :-
+	var(F) ; atom(F).
 
-% S ={X}/[P]>>(not(X);beta_convert(P,[X],O)), P={}/[Y]>>E^(runs(E), subject(E,Y)),beta_convert(S, [P], Q).
+lambda_reduce(F, Goal) :-
+	nonvar(F), 
+	\+atom(F),
+	F =.. Terms,
+	maplist(lambda_reduce, Terms, Terms1),
+	Goal =.. Terms1.
+
+
+
+% all humans run
+%S ={X}/[P]>>(\+(human(X)); beta(P,[X])), P={}/[Y]>>E1^(runs(E1), subject(E1,Y)),lambda_reduce(beta(S, [P]),G).
 
 
 % the marked form of functional application 
 % for handling existentially-closed arguments
-f(Functor, Arg, Result) :-
+create_predicate(Functor, Arg, Result) :-
 	nonvar(Arg),
 	Arg = Vars^Formula, !,
 	Vars = [X | _],
 	f(Functor, X, Result1),
-	join(Formula, [Result1 | F]-F, Formula1),
+	Formula1 = (Formula, Result1),
 	Result = Vars^Formula1.
 
-f(Functor, Arg, Result) :-
+create_predicate(Functor, Arg, Result) :-
 	Result =.. [Functor, Arg].
-
-
-% two-place functors
-% marked case where the second argument is existentially-closed.
-f(Functor, Arg1, Arg2, Result) :-
-	nonvar(Arg2),
-	Arg2 = Vars^Formula, !,
-	Vars = [X | _],
-	f(Functor, Arg1, X, Result1),
-	join(Formula, [Result1 | F]-F, Formula1),
-	Result = Vars^Formula1.
-
-f(Functor, Arg1, Arg2, Result) :-
-	Result =.. [Functor, Arg1, Arg2].
 
 
 relations_of_type(Type, Relations, RelationsOfType) :-
@@ -96,46 +89,43 @@ cnf(LogicalForm, cnf(Vars, FlatTerms)) :-
 	flatten(BareTerms, FlatTerms).
 	
 
-logical_form(Relations, LogicalForm) :-
+logical_form(Relations, LogicalForm) :-	
 	is_list(Relations),
 	relations_of_type(root, Relations, [RootRelation]),
 	logical_form(RootRelation, Relations, LogicalForm).
 
 logical_form(RootRel, Relations, LogicalForm) :-
 	RootRel = rel(root, _, _),
-	predicate(RootRel, Relations, LogicalForm), !.
+	root_predicate(RootRel, Relations, LogicalForm), !.
 	
 % default: return the dependent as an entity
 logical_form(rel(_, _, word(_, Form, _, _)), _, Form).
 
 % ----- Predicate Expressions -----
 
-predicate(rel(_, _, Word2), Relations, LogicalForm) :-
+root_predicate(Rel, Relations, LogicalForm) :-
+	Rel = rel(_, _, Word2),
 	Word2 = word(WordIndex, Predicate, _, _),
 	relations_for_governor(WordIndex, Relations, PredRelations),
 
 	SubjectRel = rel(nsubj, Word2, _),
 	member(SubjectRel, PredRelations),
 	nominal(SubjectRel, Relations, SubjectLF),
-	f(Predicate, E, Predicated),
-	f(subject, E, SubjectLF, Subject),
 
-	ObjectRel = rel(dobj, Word2, _),
-	(	member(ObjectRel, PredRelations) ->
-		(	nominal(ObjectRel, Relations, ObjectLF),
-			f(object, E, ObjectLF, Object),
-			LogicalForm =  [E]^(Predicated, Subject, Object)
-		)
-	;	LogicalForm = [E]^(Predicated, Subject)
-	).
+	predicate(Rel, Relations, PredicateLF),
+	lambda_reduce(SubjectLF, [PredicateLF], LogicalForm).
+
+	%% ObjectRel = rel(dobj, Word2, _),
+	%% (	member(ObjectRel, PredRelations) ->
+	%% 	(	nominal(ObjectRel, Relations, ObjectLF),
+	%% 		f(object, E, ObjectLF, Object),
+	%% 		LogicalForm =  [E]^(Predicated, Subject, Object)
+	%% 	)
+	%% ;	LogicalForm = [E]^(Predicated, Subject)
+	%% ).
 
 
 % ----- Nominal Expressions ---
-% leaf
-nominal(rel(_, _, Word2), Relations, LogicalForm) :-
-	Word2 = word(WordIndex, Head, _, _),
-	relations_for_governor(WordIndex, Relations, []),
-	LogicalForm = Head.
 
 nominal(rel(_, _, Word2), Relations, LogicalForm) :-
 	Word2 = word(WordIndex, Head, _, POS),
@@ -144,7 +134,10 @@ nominal(rel(_, _, Word2), Relations, LogicalForm) :-
 		LF = (Head = X)
 	;	LF =.. [Head, X]
 	),
-	dp(HeadRels, Relations, [X]^LF, LogicalForm).
+	(	HeadRels = [] ->
+		LogicalForm = {}/[P]>>([X]^(LF, beta(P, [X]))) 
+	;	dp(HeadRels, Relations, [X]^LF, LogicalForm)
+	).
 
 is_pronominal(word(_, _, _, 'WP')).
 is_pronominal(word(_, _, _, 'IN')).  % very unfortunate side-effect of dep parser.
@@ -201,6 +194,14 @@ dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
 	Rel = rel('det', _, _),
 	dp(Rels, Relations, X^LF, LogicalForm).
 
+
+
+% ----- Predicate Expressions ---
+
+predicate(rel(_, _, Word2), Relations, LogicalForm) :-
+	Word2 = word(_, Head, _, _),
+	Predicate =.. [Head, E],
+	LogicalForm = {}/[X]>>E^(Predicate, subject(E, X)).
 
 
 

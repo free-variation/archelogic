@@ -2,7 +2,7 @@
 
 test(parses) :-
 	findall(Id, parse(Id, _, _), Ids),
-	length(Ids, 5).
+	length(Ids, 6).
 
 test(relations_of_type) :-
 	parse(0, _, Rels),
@@ -22,30 +22,6 @@ test(relations_for_governor) :-
 
 test(logical_form_n) :-
 	parse(2, _, Rels),
-	logical_form(Rels, cnf([], [runs])).
-
-test(logical_form_iv) :-
-	parse(0, _, Rels),
-	logical_form(Rels, cnf([X], [runs(X), subject(X, 'John')])). 
-
-test(logical_form_tv) :-
-	parse(3, _, Rels),
-	logical_form(Rels, cnf([X], [knows(X), subject(X, 'John'), object(X, 'Mary')])).
-
-test(f) :-
-	f(runs, john, runs(john)).
-
-test(f_existential) :-
-	f(likes, X^([unicorn(X), green(X) | F]-F), X^([unicorn(X), green(X), likes(X) | F]-F)).
-
-test(logical_form_subject_relative) :-
-	parse(4, _, Rels),
-	logical_form(Rels, cnf([E, X, E1], Terms)),
-	permutation(Terms, [knows(E), subject(E, 'John'), object(E, X), 'Mary'=X, drinks(E1), subject(E1, X), object(E1, tea)]), !.
-
-test(logical_form_object_relative) :-
-	parse(1, _, Rels),
-	logical_form(Rels, cnf([E, X, E1], Terms)),
-	permutation(Terms, [knows(E), subject(E, 'John'), unicorn(X), likes(E1), subject(E1, he), object(E1, X), object(E, X)]), !.
+	logical_form(Rels, runs).
 
 :- end_tests(logical_form).
