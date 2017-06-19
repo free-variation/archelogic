@@ -4,3 +4,7 @@ runs.
 John knows Mary.
 John knows Mary who drinks tea.
 All cats run.
+The cat runs.
+A cat runs.
+No cats run.
+No cat runs.

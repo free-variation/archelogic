@@ -19,7 +19,10 @@ lambda_reduce(F, F) :-
 	F = [], !.
 
 lambda_reduce(F, F) :-
-	var(F) ; atom(F).
+	var(F), !. 
+
+lambda_reduce(F, F) :-
+	atom(F), !.
 
 lambda_reduce(F, Goal) :-
 	nonvar(F), 
@@ -101,7 +104,7 @@ logical_form(RootRel, Relations, LogicalForm) :-
 % default: return the dependent as an entity
 logical_form(rel(_, _, word(_, Form, _, _)), _, Form).
 
-% ----- Predicate Expressions -----
+% ----- Root Predicate Expressions -----
 
 root_predicate(Rel, Relations, LogicalForm) :-
 	Rel = rel(_, _, Word2),
@@ -110,88 +113,75 @@ root_predicate(Rel, Relations, LogicalForm) :-
 
 	SubjectRel = rel(nsubj, Word2, _),
 	member(SubjectRel, PredRelations),
-	nominal(SubjectRel, Relations, SubjectLF),
+	subject_nominal(SubjectRel, Relations, SubjectLF),
 
 	predicate(Rel, Relations, PredicateLF),
 	LogicalForm = beta(SubjectLF, [PredicateLF]).
 
 
-% ----- Nominal Expressions ---
+% ----- Nominal Expressions -----
 
-nominal(rel(_, _, Word2), Relations, LogicalForm) :-
-	Word2 = word(WordIndex, Head, _, POS),
+
+subject_nominal(rel(_, _, Word2), Relations, LogicalForm) :-
+	Word2 = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	(	POS = 'NNP' ->
-		LF = (Head = X)
-	;	LF =.. [Head, X]
+		LF = (HeadLemma = X)
+	;	LF =.. [HeadLemma, X]
 	),
 	(	HeadRels = [] ->
 		LogicalForm = {}/[P]>>(X^(LF, beta(P, [X]))) 
-	;	dp(HeadRels, Relations, X^LF, LogicalForm)
+	;	subject_dp(HeadRels, Relations, X^LF, LogicalForm)
 	).
+	
+% base case: no relations left
+subject_dp([], _, LogicalForm, LogicalForm).
 
+% relative clause
+subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+ 	Rel = rel('acl:relcl', _, _),
+ 	relative_clause(Rel, Relations, Y, E^RelativeClauseLF),
+ 	subject_dp(Rels, Relations, Vars^LF1, LogicalForm).
+
+% ----- generalized quantifiers -----
+% determiner: all
+subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+	Rel = rel('det', _, word(_, _, all, 'DT')),
+	subject_dp(Rels, Relations, {X}/[P]>>(\+LF;beta(P,[X])), LogicalForm).
+
+% determiner: the
+subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+	Rel = rel('det', _, word(_, _, the, 'DT')),
+	subject_dp(Rels, Relations, {X}/[P]>>Y^((\+LF; X = Y), beta(P,[X])), LogicalForm).
+
+% determiner: a
+subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+	Rel = rel('det', _, word(_, _, a, 'DT')),
+	subject_dp(Rels, Relations, {}/[P]>>X^(LF, beta(P,[X])), LogicalForm).
+
+% subject_dp default: behave as unmarked dp
+subject_db(Rels, Relations, LF, LogicalForm) :-
+	dp(Rels, Relations, LF, LogicalForm).
+
+
+% determiner: default (do nothing)
+dp([Rel | Rels], Relations, LF, LogicalForm) :-
+	Rel = rel('det', _, _),
+	dp(Rels, Relations, LF, LogicalForm).
+
+% ----- Relative Clauses -----
 is_pronominal(word(_, _, _, 'WP')).
 is_pronominal(word(_, _, _, 'IN')).  % very unfortunate side-effect of dep parser.
 
 
-relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF) :-
-	Word2 = word(WordIndex, Predicate, _, _),
-	relations_for_governor(WordIndex, Relations, PredRelations),
-
-	SubjectRel = rel(nsubj, Word2, SubjectWord),
-	member(SubjectRel, PredRelations),
-	(	is_pronominal(SubjectWord ) ->
-		SubjectLF = X
-	;	nominal(SubjectRel, Relations, SubjectLF)
-	),
-	f(Predicate, E, Predicated),
-	f(subject, E, SubjectLF, Subject),
- 
-	ObjectRel = rel(dobj, Word2, ObjectWord),
-	% if so, predicate it
-	(	member(ObjectRel, PredRelations) ->
-		(	
-			(	is_pronominal(ObjectWord) ->
-				ObjectLF = X
-			;	nominal(ObjectRel, Relations, ObjectLF)
-			),
-			f(object, E, ObjectLF, Object),
-			RelativeClauseLF = [E]^(Predicated, Subject, Object)
-		)
-	;	RelativeClauseLF = [E]^(Predicated, Subject)
-	).
-	
-
-dp([], _, LogicalForm, LogicalForm).
-
-% relative clause
-dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
- 	Rel = rel('acl:relcl', _, _),
- 	X = [Y | _],
- 	relative_clause(Rel, Relations, Y, E^RelativeClauseLF),
- 	join(LF, RelativeClauseLF, LF1),
- 	append(X, E, Vars),
- 	dp(Rels, Relations, Vars^LF1, LogicalForm).
+relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF).
 
 
-% determiner: all
-dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
-	Rel = rel('det', _, word(_, _, all, 'DT')),
-	dp(Rels, Relations, X^LF, LogicalForm).
+% ----- Predicates -----
 
-
-% determiner: default (do nothing)
-dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
-	Rel = rel('det', _, _),
-	dp(Rels, Relations, X^LF, LogicalForm).
-
-
-
-% ----- Predicate Expressions ---
-
-predicate(rel(_, _, Word2), Relations, LogicalForm) :-
-	Word2 = word(_, Head, _, _),
-	Predicate =.. [Head, E],
+predicate(rel(_, _, Word2), _, LogicalForm) :-
+	Word2 = word(_, _, HeadLemma, _),
+	Predicate =.. [HeadLemma, E],
 	LogicalForm = {}/[X]>>E^(Predicate, subject(E, X)).
 
 

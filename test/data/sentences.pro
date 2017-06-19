@@ -32,3 +32,23 @@ parse(5,"All cats run.", [
 	rel('det',word('2','cats','cat','NNS'),word('1','All','all','DT')),
 	rel('nsubj',word('3','run','run','VBP'),word('2','cats','cat','NNS')),
 	rel('punct',word('3','run','run','VBP'),word('4','.','.','.')),5]).
+parse(6,"The cat runs.", [
+	rel('root',word('0','','',''),word('3','runs','run','VBZ')),
+	rel('det',word('2','cat','cat','NN'),word('1','The','the','DT')),
+	rel('nsubj',word('3','runs','run','VBZ'),word('2','cat','cat','NN')),
+	rel('punct',word('3','runs','run','VBZ'),word('4','.','.','.')),6]).
+parse(7,"A cat runs.", [
+	rel('root',word('0','','',''),word('3','runs','run','VBZ')),
+	rel('det',word('2','cat','cat','NN'),word('1','A','a','DT')),
+	rel('nsubj',word('3','runs','run','VBZ'),word('2','cat','cat','NN')),
+	rel('punct',word('3','runs','run','VBZ'),word('4','.','.','.')),7]).
+parse(8,"No cats run.", [
+	rel('root',word('0','','',''),word('3','run','run','VBP')),
+	rel('neg',word('2','cats','cat','NNS'),word('1','No','no','DT')),
+	rel('nsubj',word('3','run','run','VBP'),word('2','cats','cat','NNS')),
+	rel('punct',word('3','run','run','VBP'),word('4','.','.','.')),8]).
+parse(9,"No cat runs.", [
+	rel('root',word('0','','',''),word('3','runs','run','VBZ')),
+	rel('neg',word('2','cat','cat','NN'),word('1','No','no','DT')),
+	rel('nsubj',word('3','runs','run','VBZ'),word('2','cat','cat','NN')),
+	rel('punct',word('3','runs','run','VBZ'),word('4','.','.','.')),9]).

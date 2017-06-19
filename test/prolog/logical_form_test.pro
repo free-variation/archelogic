@@ -2,7 +2,7 @@
 
 test(parses) :-
 	findall(Id, parse(Id, _, _), Ids),
-	length(Ids, 6).
+	length(Ids, 8).
 
 test(relations_of_type) :-
 	parse(0, _, Rels),
@@ -27,12 +27,36 @@ test(logical_form_n) :-
 test(logical_form_iv) :-
 	parse(0, _, Rels),
 	logical_form(Rels, LF),
-	LF = beta({}/[P]>>_X^('John'=X, beta(P, [X])), [{}/[Y]>>E^(runs(E), subject(E, Y))]).
+	LF = beta({}/[P]>>_X^('John'=X, beta(P, [X])), [{}/[Y]>>E^(run(E), subject(E, Y))]).
 
 test(logical_form_iv_reduced) :-
 	parse(0, _, Rels),
 	logical_form(Rels, LF),
 	lambda_reduce(LF, RedLF),
-	RedLF = X^('John'=X, E^(runs(E), subject(E, X))).
+	RedLF = X^('John'=X, E^(run(E), subject(E, X))).
+
+test(logical_form_iv_all) :-
+	parse(5, _, Rels),
+	logical_form(Rels, LF),
+	lambda_reduce(LF, RedLF),
+	RedLF = (\+cat(X); E^(run(E), subject(E, X))).
+
+test(logical_form_iv_the) :-
+	parse(6, _, Rels),
+	logical_form(Rels, LF),
+	lambda_reduce(LF, RedLF),
+	RedLF = Y^((\+cat(X); X = Y), E^(run(E), subject(E, X))).
+
+
+test(logical_form_iv_a) :-
+	parse(7, _, Rels),
+	logical_form(Rels, LF),
+	lambda_reduce(LF, RedLF),
+	RedLF = X^(cat(X), E^(run(E), subject(E, X))).
 
 :- end_tests(logical_form).
+
+run_all_parses :-
+	findall(RedLF, (parse(_, _, Rels), logical_form(Rels, LF), lambda_reduce(LF, RedLF)), RedLFs),
+	maplist(portray_clause, RedLFs).
+
