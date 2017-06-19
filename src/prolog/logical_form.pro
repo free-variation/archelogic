@@ -99,14 +99,14 @@ logical_form(Relations, LogicalForm) :-
 
 logical_form(RootRel, Relations, LogicalForm) :-
 	RootRel = rel(root, _, _),
-	root_predicate(RootRel, Relations, LogicalForm), !.
+	clause(RootRel, Relations, LogicalForm), !.
 	
 % default: return the dependent as an entity
 logical_form(rel(_, _, word(_, Form, _, _)), _, Form).
 
-% ----- Root Predicate Expressions -----
+% ----- The core clause -----
 
-root_predicate(Rel, Relations, LogicalForm) :-
+clause(Rel, Relations, LogicalForm) :-
 	Rel = rel(_, _, Word2),
 	Word2 = word(WordIndex, Predicate, _, _),
 	relations_for_governor(WordIndex, Relations, PredRelations),
@@ -140,7 +140,7 @@ subject_dp([], _, LogicalForm, LogicalForm).
 % relative clause
 subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
  	Rel = rel('acl:relcl', _, _),
- 	relative_clause(Rel, Relations, Y, E^RelativeClauseLF),
+ 	relative_clause(Rel, Relations, Y, RelativeClauseLF),
  	subject_dp(Rels, Relations, Vars^LF1, LogicalForm).
 
 % ----- generalized quantifiers -----
@@ -158,6 +158,11 @@ subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
 subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, a, 'DT')),
 	subject_dp(Rels, Relations, {}/[P]>>X^(LF, beta(P,[X])), LogicalForm).
+
+% determiner: no
+subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+	Rel = rel('neg', _, word(_, _, no, 'DT')),
+	subject_dp(Rels, Relations, {}/[P]>>(\+X^(LF, beta(P,[X]))), LogicalForm).
 
 % subject_dp default: behave as unmarked dp
 subject_db(Rels, Relations, LF, LogicalForm) :-

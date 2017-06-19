@@ -8,3 +8,4 @@ The cat runs.
 A cat runs.
 No cats run.
 No cat runs.
+Django loves all cats.

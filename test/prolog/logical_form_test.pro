@@ -1,9 +1,5 @@
 :- begin_tests(logical_form).
 
-test(parses) :-
-	findall(Id, parse(Id, _, _), Ids),
-	length(Ids, 8).
-
 test(relations_of_type) :-
 	parse(0, _, Rels),
 	relations_of_type('nsubj', Rels, [rel('nsubj',word('2','runs','run','VBZ'),word('1','John','John','NNP'))]),
@@ -53,6 +49,12 @@ test(logical_form_iv_a) :-
 	logical_form(Rels, LF),
 	lambda_reduce(LF, RedLF),
 	RedLF = X^(cat(X), E^(run(E), subject(E, X))).
+
+test(logical_form_iv_no) :-
+	parse(8, _, Rels),
+	logical_form(Rels, LF),
+	lambda_reduce(LF, RedLF),
+	RedLF = \+(X^(cat(X), E^(run(E), subject(E, X)))).
 
 :- end_tests(logical_form).
 
