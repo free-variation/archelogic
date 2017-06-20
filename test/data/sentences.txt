@@ -10,3 +10,4 @@ No cats run.
 No cat runs.
 Django loves a cat.
 Django loves all cats.
+Django loves no badcats.
