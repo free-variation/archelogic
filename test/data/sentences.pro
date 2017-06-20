@@ -52,9 +52,15 @@ parse(9,"No cat runs.", [
 	rel('neg',word('2','cat','cat','NN'),word('1','No','no','DT')),
 	rel('nsubj',word('3','runs','run','VBZ'),word('2','cat','cat','NN')),
 	rel('punct',word('3','runs','run','VBZ'),word('4','.','.','.')),9]).
-parse(10,"Django loves all cats.", [
+parse(10,"Django loves a cat.", [
+	rel('root',word('0','','',''),word('2','loves','love','VBZ')),
+	rel('nsubj',word('2','loves','love','VBZ'),word('1','Django','Django','NNP')),
+	rel('dobj',word('2','loves','love','VBZ'),word('4','cat','cat','NN')),
+	rel('punct',word('2','loves','love','VBZ'),word('5','.','.','.')),
+	rel('det',word('4','cat','cat','NN'),word('3','a','a','DT')),10]).
+parse(11,"Django loves all cats.", [
 	rel('root',word('0','','',''),word('2','loves','love','VBZ')),
 	rel('nsubj',word('2','loves','love','VBZ'),word('1','Django','Django','NNP')),
 	rel('dobj',word('2','loves','love','VBZ'),word('4','cats','cat','NNS')),
 	rel('punct',word('2','loves','love','VBZ'),word('5','.','.','.')),
-	rel('det',word('4','cats','cat','NNS'),word('3','all','all','DT')),10]).
+	rel('det',word('4','cats','cat','NNS'),word('3','all','all','DT')),11]).

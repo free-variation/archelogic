@@ -1,3 +1,8 @@
+lf(Id, RedLF) :-
+	parse(Id, _, Rels),
+	logical_form(Rels, LF),
+	lambda_reduce(LF, RedLF).
+
 :- begin_tests(logical_form).
 
 test(relations_of_type) :-
@@ -26,35 +31,38 @@ test(logical_form_iv) :-
 	LF = beta({}/[P]>>_X^('John'=X, beta(P, [X])), [{}/[Y]>>E^(run(E), subject(E, Y))]).
 
 test(logical_form_iv_reduced) :-
-	parse(0, _, Rels),
-	logical_form(Rels, LF),
-	lambda_reduce(LF, RedLF),
+	lf(0, RedLF),
 	RedLF = X^('John'=X, E^(run(E), subject(E, X))).
 
 test(logical_form_iv_all) :-
-	parse(5, _, Rels),
-	logical_form(Rels, LF),
-	lambda_reduce(LF, RedLF),
+	lf(5, RedLF),
 	RedLF = (\+cat(X); E^(run(E), subject(E, X))).
 
 test(logical_form_iv_the) :-
-	parse(6, _, Rels),
-	logical_form(Rels, LF),
-	lambda_reduce(LF, RedLF),
+	lf(6, RedLF),
 	RedLF = Y^((\+cat(X); X = Y), E^(run(E), subject(E, X))).
 
-
 test(logical_form_iv_a) :-
-	parse(7, _, Rels),
-	logical_form(Rels, LF),
-	lambda_reduce(LF, RedLF),
+	lf(7, RedLF),
 	RedLF = X^(cat(X), E^(run(E), subject(E, X))).
 
-test(logical_form_iv_no) :-
-	parse(8, _, Rels),
-	logical_form(Rels, LF),
-	lambda_reduce(LF, RedLF),
+test(logical_form_iv_no1) :-
+	lf(8, RedLF),
 	RedLF = \+(X^(cat(X), E^(run(E), subject(E, X)))).
+
+test(logical_form_iv_no2) :-
+	lf(9, RedLF),
+	RedLF = \+(X^(cat(X), E^(run(E), subject(E, X)))).
+
+test(logical_form_tv_obj_a) :-
+	lf(10, RedLF),
+	RedLF = X^('Django'= X, E^(love(E), subject(E, X), Y^(cat(Y), object(E, Y)))).
+
+test(logical_form_tv_obj_all) :-
+	lf(11, RedLF),
+	RedLF = X^('Django'= X, E^(love(E), subject(E, X), {Y}/(cat(Y), object(E, Y)))).
+
+
 
 :- end_tests(logical_form).
 

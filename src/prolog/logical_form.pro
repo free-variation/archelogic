@@ -36,19 +36,44 @@ lambda_reduce(F, Goal) :-
 % all humans run
 %S ={X}/[P]>>(\+(human(X)); beta(P,[X])), P={}/[Y]>>E1^(runs(E1), subject(E1,Y)),lambda_reduce(beta(S, [P]),G).
 
+f(A, B, Result) :-
+	atom(A),
+	Result =.. [A | [B]].
+
+f(A, B, Result) :-
+	compound(A),
+	A =.. [Functor | Args],
+	append(Args, [B], Args1),
+	Result =.. [Functor | Args1].
 
 % the marked form of functional application 
 % for handling existentially-closed arguments
 create_predicate(Functor, Arg, Result) :-
 	nonvar(Arg),
-	Arg = Vars^Formula, !,
-	Vars = [X | _],
+	Arg = X^Formula, !,
 	f(Functor, X, Result1),
 	Formula1 = (Formula, Result1),
-	Result = Vars^Formula1.
+	Result = X^Formula1.
+
+% also for a universally quantified expression
+create_predicate(Functor, Arg, Result) :-
+	nonvar(Arg),
+	Arg = {X}/Formula, !,
+	f(Functor, X, Result1),
+	Formula1 = (Formula, Result1),
+	Result = {X}/Formula1.
+
+% also for a universally quantified expression over lambdas
+create_predicate(Functor, Arg, Result) :-
+	nonvar(Arg),
+	Arg = {X}/[Y]>>Formula, !,
+	f(Functor, X, Result1),
+	Formula1 = (Formula, Result1),
+	Result = {X}/[Y]>>Formula1.
+
 
 create_predicate(Functor, Arg, Result) :-
-	Result =.. [Functor, Arg].
+	f(Functor, Arg, Result).
 
 
 relations_of_type(Type, Relations, RelationsOfType) :-
@@ -108,7 +133,7 @@ logical_form(rel(_, _, word(_, Form, _, _)), _, Form).
 
 clause(Rel, Relations, LogicalForm) :-
 	Rel = rel(_, _, Word2),
-	Word2 = word(WordIndex, Predicate, _, _),
+	Word2 = word(WordIndex, _, _, _),
 	relations_for_governor(WordIndex, Relations, PredRelations),
 
 	SubjectRel = rel(nsubj, Word2, _),
@@ -165,11 +190,13 @@ subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
 	subject_dp(Rels, Relations, {}/[P]>>(\+X^(LF, beta(P,[X]))), LogicalForm).
 
 % subject_dp default: behave as unmarked dp
-subject_db(Rels, Relations, LF, LogicalForm) :-
+subject_dp(Rels, Relations, LF, LogicalForm) :-
 	dp(Rels, Relations, LF, LogicalForm).
 
 
 % determiner: default (do nothing)
+dp([], Relations, LogicalForm, LogicalForm).
+
 dp([Rel | Rels], Relations, LF, LogicalForm) :-
 	Rel = rel('det', _, _),
 	dp(Rels, Relations, LF, LogicalForm).
@@ -184,10 +211,40 @@ relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF).
 
 % ----- Predicates -----
 
-predicate(rel(_, _, Word2), _, LogicalForm) :-
+predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 	Word2 = word(_, _, HeadLemma, _),
 	Predicate =.. [HeadLemma, E],
-	LogicalForm = {}/[X]>>E^(Predicate, subject(E, X)).
+	ObjectRel = rel(dobj, Word2, _),
+	(	member(ObjectRel, Relations) ->
+		(	object_nominal(ObjectRel, Relations, ObjectLF),
+			create_predicate(object(E), ObjectLF, ObjectPredicate),
+			LogicalForm = {}/[X]>>E^(Predicate, subject(E, X), ObjectPredicate)
+		)
+	;	LogicalForm = {}/[X]>>E^(Predicate, subject(E, X))
+	).
+
+
+
+object_nominal(rel(_, _, Word2), Relations, LogicalForm) :-
+	Word2 = word(WordIndex, _, HeadLemma, POS),
+	relations_for_governor(WordIndex, Relations, HeadRels),
+	(	POS = 'NNP' ->
+		LF = (HeadLemma = X)
+	;	f(HeadLemma, X, LF)
+	),
+	(	HeadRels = [] ->
+		LogicalForm = X^LF 
+	;	object_dp(HeadRels, Relations, X^LF, LogicalForm)
+	).
+
+% determiner: all
+object_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+	Rel = rel('det', _, word(_, _, all, 'DT')),
+	object_dp(Rels, Relations, {X}/LF, LogicalForm).
+
+% object_dp default: behave as unmarked dp
+object_dp(Rels, Relations, LF, LogicalForm) :-
+	dp(Rels, Relations, LF, LogicalForm).
 
 
 
