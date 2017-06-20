@@ -243,6 +243,7 @@ object_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
 	object_dp(Rels, Relations, {X}/LF, LogicalForm).
 
 % object_dp default: behave as unmarked dp
+
 object_dp(Rels, Relations, LF, LogicalForm) :-
 	dp(Rels, Relations, LF, LogicalForm).
 
