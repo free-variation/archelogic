@@ -62,8 +62,6 @@ test(logical_form_tv_obj_all) :-
 	lf(11, RedLF),
 	RedLF = X^('Django'= X, E^(love(E), subject(E, X), {Y}/(cat(Y), object(E, Y)))).
 
-
-
 :- end_tests(logical_form).
 
 run_all_parses :-
