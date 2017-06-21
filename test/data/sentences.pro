@@ -64,3 +64,30 @@ parse(11,"Django loves all cats.", [
 	rel('dobj',word('2','loves','love','VBZ'),word('4','cats','cat','NNS')),
 	rel('punct',word('2','loves','love','VBZ'),word('5','.','.','.')),
 	rel('det',word('4','cats','cat','NNS'),word('3','all','all','DT')),11]).
+parse(12,"Django loves no badcats.", [
+	rel('root',word('0','','',''),word('2','loves','love','VBZ')),
+	rel('nsubj',word('2','loves','love','VBZ'),word('1','Django','Django','NNP')),
+	rel('dobj',word('2','loves','love','VBZ'),word('4','badcats','badcat','NNS')),
+	rel('punct',word('2','loves','love','VBZ'),word('5','.','.','.')),
+	rel('neg',word('4','badcats','badcat','NNS'),word('3','no','no','DT')),12]).
+parse(13,"The cat licks the mat.", [
+	rel('root',word('0','','',''),word('3','licks','lick','VBZ')),
+	rel('det',word('2','cat','cat','NN'),word('1','The','the','DT')),
+	rel('nsubj',word('3','licks','lick','VBZ'),word('2','cat','cat','NN')),
+	rel('dobj',word('3','licks','lick','VBZ'),word('5','mat','mat','NN')),
+	rel('punct',word('3','licks','lick','VBZ'),word('6','.','.','.')),
+	rel('det',word('5','mat','mat','NN'),word('4','the','the','DT')),13]).
+parse(14,"Every man loves a woman.", [
+	rel('root',word('0','','',''),word('3','loves','love','VBZ')),
+	rel('det',word('2','man','man','NN'),word('1','Every','every','DT')),
+	rel('nsubj',word('3','loves','love','VBZ'),word('2','man','man','NN')),
+	rel('dobj',word('3','loves','love','VBZ'),word('5','woman','woman','NN')),
+	rel('punct',word('3','loves','love','VBZ'),word('6','.','.','.')),
+	rel('det',word('5','woman','woman','NN'),word('4','a','a','DT')),14]).
+parse(15,"Every man loves every woman.", [
+	rel('root',word('0','','',''),word('3','loves','love','VBZ')),
+	rel('det',word('2','man','man','NN'),word('1','Every','every','DT')),
+	rel('nsubj',word('3','loves','love','VBZ'),word('2','man','man','NN')),
+	rel('dobj',word('3','loves','love','VBZ'),word('5','woman','woman','NN')),
+	rel('punct',word('3','loves','love','VBZ'),word('6','.','.','.')),
+	rel('det',word('5','woman','woman','NN'),word('4','every','every','DT')),15]).

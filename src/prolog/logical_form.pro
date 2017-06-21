@@ -169,15 +169,16 @@ subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
  	subject_dp(Rels, Relations, Vars^LF1, LogicalForm).
 
 % ----- generalized quantifiers -----
-% determiner: all
+% determiner: all, every
 subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
-	Rel = rel('det', _, word(_, _, all, 'DT')),
+	Rel = rel('det', _, word(_, _, Det, 'DT')),
+	(	Det = all; Det = every),
 	subject_dp(Rels, Relations, {X}/[P]>>(\+LF;beta(P,[X])), LogicalForm).
 
 % determiner: the
 subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, the, 'DT')),
-	subject_dp(Rels, Relations, {X}/[P]>>Y^((\+LF; X = Y), beta(P,[X])), LogicalForm).
+	subject_dp(Rels, Relations, {X}/[P]>>Y^(\+LF; (X = Y, beta(P,[X]))), LogicalForm).
 
 % determiner: a
 subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
@@ -217,8 +218,7 @@ predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 	ObjectRel = rel(dobj, Word2, _),
 	(	member(ObjectRel, Relations) ->
 		(	object_nominal(ObjectRel, Relations, ObjectLF),
-			create_predicate(object(E), ObjectLF, ObjectPredicate),
-			LogicalForm = {}/[X]>>E^(Predicate, subject(E, X), ObjectPredicate)
+			LogicalForm = {}/[X]>>E^(Predicate, subject(E, X), beta(ObjectLF, [E]))
 		)
 	;	LogicalForm = {}/[X]>>E^(Predicate, subject(E, X))
 	).
@@ -232,15 +232,30 @@ object_nominal(rel(_, _, Word2), Relations, LogicalForm) :-
 		LF = (HeadLemma = X)
 	;	f(HeadLemma, X, LF)
 	),
+	LF1 = {}/[E]>>(X^(LF, object(E,X))),
 	(	HeadRels = [] ->
-		LogicalForm = X^LF 
-	;	object_dp(HeadRels, Relations, X^LF, LogicalForm)
+		LogicalForm = LF1
+	;	object_dp(HeadRels, Relations, LF1, LogicalForm)
 	).
 
-% determiner: all
-object_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
-	Rel = rel('det', _, word(_, _, all, 'DT')),
-	object_dp(Rels, Relations, {X}/LF, LogicalForm).
+% determiner: all, every
+object_dp([Rel | Rels], Relations, {}/[E]>>(X^(LF, object(E,X))) , LogicalForm) :-
+	Rel = rel('det', _, word(_, _, Det, 'DT')),
+	(	Det = all; Det = every),
+	object_dp(Rels, Relations, {X}/[E]>>(\+LF ; object(E, X)), LogicalForm).
+
+
+% determiner: the
+object_dp([Rel | Rels], Relations, {}/[E]>>(X^(LF, object(E,X))), LogicalForm) :-
+	Rel = rel('det', _, word(_, _, the, 'DT')),
+	object_dp(Rels, Relations, {X}/[E]>>(Y^(\+LF; (X = Y, object(E, X)))), LogicalForm).
+
+
+% determiner: no
+object_dp([Rel | Rels], Relations, {}/[E]>>(X^(LF, object(E,X))), LogicalForm) :-
+	Rel = rel('neg', _, word(_, _, no, 'DT')),
+	object_dp(Rels, Relations, {}/[E]>>(\+X^(LF, object(E, X))), LogicalForm).
+
 
 % object_dp default: behave as unmarked dp
 
