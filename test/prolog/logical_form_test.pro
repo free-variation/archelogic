@@ -77,6 +77,28 @@ test(logical_form_tv_every_a) :-
 test(logical_form_tv_every_every) :-
 	lf(15, RedLF),
 	RedLF = (\+man(X); E^(love(E), subject(E, X), (\+woman(Y); object(E, Y)))).
+
+test(logical_form_iv_pl_def_subj) :-
+	lf(16, RedLF),
+	RedLF = (\+cat(X); E^(run(E), subject(E, X))).
+
+test(logical_form_iv_pl_iterated_dets) :-
+	lf(17, RedLF),
+	RedLF = (\+cat(X); E^(run(E), subject(E, X))).
+
+test(logical_form_tv_the_the_pl) :-
+	lf(18, RedLF),
+	RedLF = Y^(\+cat(X); X = Y, E^(lick(E), subject(E, X), (\+mat(U); object(E, U)))).
+
+test(relative_pronoun_that) :-
+	relative_pronoun(that).
+test(not_relative_pronoun_in) :-
+	\+relative_pronoun(in).
+
+test(relative_adverb_when) :-
+	relative_adverb(when).
+test(not_relative_adverb_how) :-
+	\+relative_adverb(how).	
 	
 :- end_tests(logical_form).
 

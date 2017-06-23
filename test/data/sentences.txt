@@ -14,3 +14,7 @@ Django loves no badcats.
 The cat licks the mat.
 Every man loves a woman.
 Every man loves every woman.
+The cats run.
+All the cats run.
+The cat licks the mats.
+The cat that meows eats.

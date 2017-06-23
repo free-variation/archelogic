@@ -91,3 +91,28 @@ parse(15,"Every man loves every woman.", [
 	rel('dobj',word('3','loves','love','VBZ'),word('5','woman','woman','NN')),
 	rel('punct',word('3','loves','love','VBZ'),word('6','.','.','.')),
 	rel('det',word('5','woman','woman','NN'),word('4','every','every','DT')),15]).
+parse(16,"The cats run.", [
+	rel('root',word('0','','',''),word('3','run','run','VBP')),
+	rel('det',word('2','cats','cat','NNS'),word('1','The','the','DT')),
+	rel('nsubj',word('3','run','run','VBP'),word('2','cats','cat','NNS')),
+	rel('punct',word('3','run','run','VBP'),word('4','.','.','.')),16]).
+parse(17,"All the cats run.", [
+	rel('root',word('0','','',''),word('4','run','run','VBP')),
+	rel('det:predet',word('3','cats','cat','NNS'),word('1','All','all','PDT')),
+	rel('det',word('3','cats','cat','NNS'),word('2','the','the','DT')),
+	rel('nsubj',word('4','run','run','VBP'),word('3','cats','cat','NNS')),
+	rel('punct',word('4','run','run','VBP'),word('5','.','.','.')),17]).
+parse(18,"The cat licks the mats.", [
+	rel('root',word('0','','',''),word('3','licks','lick','VBZ')),
+	rel('det',word('2','cat','cat','NN'),word('1','The','the','DT')),
+	rel('nsubj',word('3','licks','lick','VBZ'),word('2','cat','cat','NN')),
+	rel('dobj',word('3','licks','lick','VBZ'),word('5','mats','mat','NNS')),
+	rel('punct',word('3','licks','lick','VBZ'),word('6','.','.','.')),
+	rel('det',word('5','mats','mat','NNS'),word('4','the','the','DT')),18]).
+parse(19,"The cat that meows eats.", [
+	rel('root',word('0','','',''),word('5','eats','eat','VBZ')),
+	rel('det',word('2','cat','cat','NN'),word('1','The','the','DT')),
+	rel('acl:relcl',word('2','cat','cat','NN'),word('4','meows','meow','VBZ')),
+	rel('nsubj',word('4','meows','meow','VBZ'),word('3','that','that','WDT')),
+	rel('nsubj',word('5','eats','eat','VBZ'),word('2','cat','cat','NN')),
+	rel('punct',word('5','eats','eat','VBZ'),word('6','.','.','.')),19]).

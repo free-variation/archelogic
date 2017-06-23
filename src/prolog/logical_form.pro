@@ -138,7 +138,7 @@ clause(Rel, Relations, LogicalForm) :-
 
 	SubjectRel = rel(nsubj, Word2, _),
 	member(SubjectRel, PredRelations),
-	subject_nominal(SubjectRel, Relations, SubjectLF),
+	subject(SubjectRel, Relations, SubjectLF),
 
 	predicate(Rel, Relations, PredicateLF),
 	LogicalForm = beta(SubjectLF, [PredicateLF]).
@@ -147,7 +147,7 @@ clause(Rel, Relations, LogicalForm) :-
 % ----- Nominal Expressions -----
 
 
-subject_nominal(rel(_, _, Word2), Relations, LogicalForm) :-
+subject(rel(_, _, Word2), Relations, LogicalForm) :-
 	Word2 = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	(	POS = 'NNP' ->
@@ -156,58 +156,59 @@ subject_nominal(rel(_, _, Word2), Relations, LogicalForm) :-
 	),
 	(	HeadRels = [] ->
 		LogicalForm = {}/[P]>>(X^(LF, beta(P, [X]))) 
-	;	subject_dp(HeadRels, Relations, X^LF, LogicalForm)
+	;	subject_dp(HeadRels, POS, Relations, X^LF, LogicalForm)
 	).
 	
 % base case: no relations left
-subject_dp([], _, LogicalForm, LogicalForm).
+subject_dp([], _, _, LogicalForm, LogicalForm).
+
+% ignore predeterminers [TODO jds forever?]
+subject_dp([rel('det:predet', _, _) | Rels], POS, Relations, LF, LogicalForm) :-
+	subject_dp(Rels, POS, Relations, LF, LogicalForm).
+	
 
 % relative clause
-subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+subject_dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
  	Rel = rel('acl:relcl', _, _),
  	relative_clause(Rel, Relations, Y, RelativeClauseLF),
- 	subject_dp(Rels, Relations, Vars^LF1, LogicalForm).
+ 	subject_dp(Rels, POS, Relations, Vars^LF1, LogicalForm).
 
 % ----- generalized quantifiers -----
 % determiner: all, every
-subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+subject_dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, Det, 'DT')),
 	(	Det = all; Det = every),
-	subject_dp(Rels, Relations, {X}/[P]>>(\+LF;beta(P,[X])), LogicalForm).
+	subject_dp(Rels, POS, Relations, {X}/[P]>>(\+LF;beta(P,[X])), LogicalForm).
 
 % determiner: the
-subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+subject_dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, the, 'DT')),
-	subject_dp(Rels, Relations, {X}/[P]>>Y^(\+LF; (X = Y, beta(P,[X]))), LogicalForm).
+	(	POS = 'NNS'	-> % check for plural nouns
+		subject_dp(Rels, POS, Relations, {X}/[P]>>(\+LF;beta(P,[X])), LogicalForm)
+	; 	subject_dp(Rels, POS,  Relations, {X}/[P]>>Y^(\+LF; (X = Y, beta(P,[X]))), LogicalForm)
+	).
 
 % determiner: a
-subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+subject_dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, a, 'DT')),
-	subject_dp(Rels, Relations, {}/[P]>>X^(LF, beta(P,[X])), LogicalForm).
+	subject_dp(Rels, POS, Relations, {}/[P]>>X^(LF, beta(P,[X])), LogicalForm).
 
 % determiner: no
-subject_dp([Rel | Rels], Relations, X^LF, LogicalForm) :-
+subject_dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
 	Rel = rel('neg', _, word(_, _, no, 'DT')),
-	subject_dp(Rels, Relations, {}/[P]>>(\+X^(LF, beta(P,[X]))), LogicalForm).
+	subject_dp(Rels, POS, Relations, {}/[P]>>(\+X^(LF, beta(P,[X]))), LogicalForm).
 
 % subject_dp default: behave as unmarked dp
-subject_dp(Rels, Relations, LF, LogicalForm) :-
-	dp(Rels, Relations, LF, LogicalForm).
+subject_dp(Rels, POS, Relations, LF, LogicalForm) :-
+	dp(Rels, POS, Relations, LF, LogicalForm).
 
 
 % determiner: default (do nothing)
-dp([], Relations, LogicalForm, LogicalForm).
+dp([], _, _, LogicalForm, LogicalForm).
 
-dp([Rel | Rels], Relations, LF, LogicalForm) :-
+dp([Rel | Rels], POS, Relations, LF, LogicalForm) :-
 	Rel = rel('det', _, _),
-	dp(Rels, Relations, LF, LogicalForm).
-
-% ----- Relative Clauses -----
-is_pronominal(word(_, _, _, 'WP')).
-is_pronominal(word(_, _, _, 'IN')).  % very unfortunate side-effect of dep parser.
-
-
-relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF).
+	dp(Rels, POS, Relations, LF, LogicalForm).
 
 
 % ----- Predicates -----
@@ -217,7 +218,7 @@ predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 	Predicate =.. [HeadLemma, E],
 	ObjectRel = rel(dobj, Word2, _),
 	(	member(ObjectRel, Relations) ->
-		(	object_nominal(ObjectRel, Relations, ObjectLF),
+		(	object(ObjectRel, Relations, ObjectLF),
 			LogicalForm = {}/[X]>>E^(Predicate, subject(E, X), beta(ObjectLF, [E]))
 		)
 	;	LogicalForm = {}/[X]>>E^(Predicate, subject(E, X))
@@ -225,7 +226,7 @@ predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 
 
 
-object_nominal(rel(_, _, Word2), Relations, LogicalForm) :-
+object(rel(_, _, Word2), Relations, LogicalForm) :-
 	Word2 = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	(	POS = 'NNP' ->
@@ -235,32 +236,49 @@ object_nominal(rel(_, _, Word2), Relations, LogicalForm) :-
 	LF1 = {}/[E]>>(X^(LF, object(E,X))),
 	(	HeadRels = [] ->
 		LogicalForm = LF1
-	;	object_dp(HeadRels, Relations, LF1, LogicalForm)
+	;	object_dp(HeadRels, POS, Relations, LF1, LogicalForm)
 	).
 
 % determiner: all, every
-object_dp([Rel | Rels], Relations, {}/[E]>>(X^(LF, object(E,X))) , LogicalForm) :-
+object_dp([Rel | Rels], POS, Relations, {}/[E]>>(X^(LF, object(E,X))) , LogicalForm) :-
 	Rel = rel('det', _, word(_, _, Det, 'DT')),
 	(	Det = all; Det = every),
-	object_dp(Rels, Relations, {X}/[E]>>(\+LF ; object(E, X)), LogicalForm).
+	object_dp(Rels, POS, Relations, {X}/[E]>>(\+LF ; object(E, X)), LogicalForm).
 
 
 % determiner: the
-object_dp([Rel | Rels], Relations, {}/[E]>>(X^(LF, object(E,X))), LogicalForm) :-
+object_dp([Rel | Rels], POS, Relations, {}/[E]>>(X^(LF, object(E,X))), LogicalForm) :-
 	Rel = rel('det', _, word(_, _, the, 'DT')),
-	object_dp(Rels, Relations, {X}/[E]>>(Y^(\+LF; (X = Y, object(E, X)))), LogicalForm).
+	(	POS = 'NNS' -> % check for plural nouns
+		object_dp(Rels, POS, Relations, {X}/[E]>>(\+LF ; object(E, X)), LogicalForm)
+	;	object_dp(Rels, POS, Relations, {X}/[E]>>(Y^(\+LF; (X = Y, object(E, X)))), LogicalForm)
+	).
 
 
 % determiner: no
-object_dp([Rel | Rels], Relations, {}/[E]>>(X^(LF, object(E,X))), LogicalForm) :-
+object_dp([Rel | Rels], POS, Relations, {}/[E]>>(X^(LF, object(E,X))), LogicalForm) :-
 	Rel = rel('neg', _, word(_, _, no, 'DT')),
-	object_dp(Rels, Relations, {}/[E]>>(\+X^(LF, object(E, X))), LogicalForm).
+	object_dp(Rels, POS, Relations, {}/[E]>>(\+X^(LF, object(E, X))), LogicalForm).
 
 
 % object_dp default: behave as unmarked dp
 
-object_dp(Rels, Relations, LF, LogicalForm) :-
-	dp(Rels, Relations, LF, LogicalForm).
+object_dp(Rels, POS, Relations, LF, LogicalForm) :-
+	dp(Rels, POS, Relations, LF, LogicalForm).
+
+% ----- Relative Clauses -----
+relative_pronoun(who).
+relative_pronoun(whom).
+relative_pronoun(that).
+relative_pronoun(which).
+
+relative_adverb(when).
+relative_adverb(where).
+relative_adverb(why).
+
+
+relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF).
+
 
 
 
