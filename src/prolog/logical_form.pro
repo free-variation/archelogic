@@ -148,15 +148,42 @@ clause(Rel, Relations, LogicalForm) :-
 
 
 subject(rel(_, _, Word2), Relations, LogicalForm) :-
-	Word2 = word(WordIndex, _, HeadLemma, POS),
+	np(Word2, Relations, X^NP),
+	subject_dp(Word2, Relations, X^NP, LogicalForm).
+
+% ----- noun phrases -----
+np(Word, Relations, LogicalForm) :-
+	Word = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	(	POS = 'NNP' ->
-		LF = (HeadLemma = X)
-	;	LF =.. [HeadLemma, X]
+		NP = (HeadLemma = X)
+	;	NP =.. [HeadLemma, X]
 	),
-	(	HeadRels = [] ->
-		LogicalForm = {}/[P]>>(X^(LF, beta(P, [X]))) 
-	;	subject_dp(HeadRels, POS, Relations, X^LF, LogicalForm)
+	nbar(HeadRels, Relations, X^NP, LogicalForm).
+
+% base case: no modifiers
+nbar([], _, LogicalForm, LogicalForm).
+
+% relative clause
+nbar([Rel | Rels], Relations, X^NP, LogicalForm) :-
+ 	Rel = rel('acl:relcl', _, _),
+ 	relative_clause(Rel, Relations, Y, X^RelClauseLF),
+ 	nbar(Rels, Relations, X^(NP, RelClauseLF), LogicalForm).
+
+% default: ignore this dependency
+nbar([_ | Rels], Relations, NP, LogicalForm) :-
+	nbar(Rels, Relations, NP, LogicalForm).
+
+% ----- DP -----
+subject_dp(Word, Relations, X^NP, LogicalForm) :-
+	Word = word(WordIndex, _, HeadLemma, POS),
+	relations_for_governor(WordIndex, Relations, HeadRels),
+	subject_dp(HeadRels, POS, Relations, X^NP, DP),
+	(	DP = _/_>>_ ->
+		LogicalForm = DP
+	;	(	DP = X^DP1, 
+			LogicalForm = {}/[P]>>(X^(DP1, beta(P, [X])))
+		)
 	).
 	
 % base case: no relations left
@@ -166,13 +193,6 @@ subject_dp([], _, _, LogicalForm, LogicalForm).
 subject_dp([rel('det:predet', _, _) | Rels], POS, Relations, LF, LogicalForm) :-
 	subject_dp(Rels, POS, Relations, LF, LogicalForm).
 	
-
-% relative clause
-subject_dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
- 	Rel = rel('acl:relcl', _, _),
- 	relative_clause(Rel, Relations, Y, RelativeClauseLF),
- 	subject_dp(Rels, POS, Relations, Vars^LF1, LogicalForm).
-
 % ----- generalized quantifiers -----
 % determiner: all, every
 subject_dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
@@ -199,8 +219,8 @@ subject_dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
 	subject_dp(Rels, POS, Relations, {}/[P]>>(\+X^(LF, beta(P,[X]))), LogicalForm).
 
 % subject_dp default: behave as unmarked dp
-subject_dp(Rels, POS, Relations, LF, LogicalForm) :-
-	dp(Rels, POS, Relations, LF, LogicalForm).
+subject_dp(Rels, POS, Relations, X^NP, LogicalForm) :-
+	dp(Rels, POS, Relations, X^NP, LogicalForm).
 
 
 % determiner: default (do nothing)
