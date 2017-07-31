@@ -170,9 +170,7 @@ nbar([_ | Rels], Relations, NP, LogicalForm) :-
 	nbar(Rels, Relations, NP, LogicalForm).
 
 
-
 % ----- DP -----
-
 	
 % base case: no relations left
 dp([], _, _, LogicalForm, LogicalForm).
@@ -205,9 +203,7 @@ dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
 	Rel = rel('neg', _, word(_, _, no, 'DT')),
 	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(\+X^(LF, T))), LogicalForm).
 
-% determiner: default (do nothing)
-dp([], _, _, LogicalForm, LogicalForm).
-
+% determiner: default (do nothing for this relation)
 dp([Rel | Rels], POS, Relations, LF, LogicalForm) :-
 	Rel = rel('det', _, _),
 	dp(Rels, POS, Relations, LF, LogicalForm).
@@ -217,8 +213,12 @@ subject_dp(Word, Relations, X^NP, LogicalForm) :-
 	Word = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	dp(HeadRels, POS, Relations, X^NP, DP),
-	DP = {_, P}/_>>_,
-	lambda_calls(DP, [beta(P, [X])], LogicalForm).
+	(	DP = {_, P}/_>>_ ->
+		lambda_calls(DP, [beta(P, [X])], LogicalForm)
+	;	(	DP = X^DP1,
+			LogicalForm = {}/[P]>>(X^(DP1, beta(P, [X])))
+		)
+	).
 
 % ----- Object DPs add an object event predicate to the event -----
 object_dp(Word, Relations, X^NP, LogicalForm) :-
@@ -229,7 +229,7 @@ object_dp(Word, Relations, X^NP, LogicalForm) :-
 	lambda_calls(DP, [object(E, X)], LogicalForm).
 
 
-% ----- Predicates -----
+% ----- The Clause -----
 
 predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 	Word2 = word(_, _, HeadLemma, _),
@@ -247,22 +247,14 @@ subject(rel(_, _, Word2), Relations, LogicalForm) :-
 	np(Word2, Relations, X^NP),
 	subject_dp(Word2, Relations, X^NP, LogicalForm).
 
-
 object(rel(_, _, Word2), Relations, LogicalForm) :-
-	Word2 = word(WordIndex, _, HeadLemma, POS),
-	relations_for_governor(WordIndex, Relations, HeadRels),
-	(	POS = 'NNP' ->
-		LF = (HeadLemma = X)
-	;	f(HeadLemma, X, LF)
-	),
-	LF1 = {}/[E]>>(X^(LF, object(E,X))),
-	(	HeadRels = [] ->
-		LogicalForm = LF1
-	;	object_dp(HeadRels, Relations, LF1, LogicalForm)
-	).
+	np(Word2, Relations, X^NP),
+	object_dp(Word2, Relations, X^NP, LogicalForm).
+
 
 
 % ----- Relative Clauses -----
+
 relative_pronoun(who).
 relative_pronoun(whom).
 relative_pronoun(that).
