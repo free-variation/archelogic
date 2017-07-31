@@ -32,50 +32,6 @@ lambda_reduce(F, Goal) :-
 	Goal =.. Terms1.
 
 
-
-% all humans run
-%S ={X}/[P]>>(\+(human(X)); beta(P,[X])), P={}/[Y]>>E1^(runs(E1), subject(E1,Y)),lambda_reduce(beta(S, [P]),G).
-
-f(A, B, Result) :-
-	atom(A),
-	Result =.. [A | [B]].
-
-f(A, B, Result) :-
-	compound(A),
-	A =.. [Functor | Args],
-	append(Args, [B], Args1),
-	Result =.. [Functor | Args1].
-
-% the marked form of functional application 
-% for handling existentially-closed arguments
-create_predicate(Functor, Arg, Result) :-
-	nonvar(Arg),
-	Arg = X^Formula, !,
-	f(Functor, X, Result1),
-	Formula1 = (Formula, Result1),
-	Result = X^Formula1.
-
-% also for a universally quantified expression
-create_predicate(Functor, Arg, Result) :-
-	nonvar(Arg),
-	Arg = {X}/Formula, !,
-	f(Functor, X, Result1),
-	Formula1 = (Formula, Result1),
-	Result = {X}/Formula1.
-
-% also for a universally quantified expression over lambdas
-create_predicate(Functor, Arg, Result) :-
-	nonvar(Arg),
-	Arg = {X}/[Y]>>Formula, !,
-	f(Functor, X, Result1),
-	Formula1 = (Formula, Result1),
-	Result = {X}/[Y]>>Formula1.
-
-
-create_predicate(Functor, Arg, Result) :-
-	f(Functor, Arg, Result).
-
-
 relations_of_type(Type, Relations, RelationsOfType) :-
 	include({Type}/[Rel]>>(Rel=rel(Type, _, _)), Relations, RelationsOfType).
 
