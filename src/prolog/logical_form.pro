@@ -9,7 +9,7 @@ debug(Value) :-
 
 lambda_reduce(F, Goal) :-
 	nonvar(F),
-	F = beta(Lambda, Vars), 
+	F = f(Lambda, Vars), 
 	is_lambda(Lambda), !,
 	lambda_calls(Lambda, Vars, ReducedLambda),
 	lambda_reduce(ReducedLambda, Goal).
@@ -97,7 +97,7 @@ clause(Rel, Relations, LogicalForm) :-
 	subject(SubjectRel, Relations, SubjectLF),
 
 	predicate(Rel, Relations, PredicateLF),
-	LogicalForm = beta(SubjectLF, [PredicateLF]).
+	LogicalForm = f(SubjectLF, [PredicateLF]).
 
 
 % ----- Nominal Expressions -----
@@ -110,16 +110,17 @@ np(Word, Relations, LogicalForm) :-
 		NP = (HeadLemma = X)
 	;	NP =.. [HeadLemma, X]
 	),
-	nbar(HeadRels, Relations, X^NP, LogicalForm).
+	nbar(HeadRels, Relations, [X]>>NP, LogicalForm).
 
 % base case: no modifiers
 nbar([], _, LogicalForm, LogicalForm).
 
 % relative clause
-nbar([Rel | Rels], Relations, X^NP, LogicalForm) :-
+nbar([Rel | Rels], Relations, [X]>>NP, LogicalForm) :-
  	Rel = rel('acl:relcl', _, _),
- 	relative_clause(Rel, Relations, Y, X^RelClauseLF),
- 	nbar(Rels, Relations, X^(NP, RelClauseLF), LogicalForm).
+ 	relative_clause(Rel, Relations, RelativeClauseLF),
+ 	debug(RelativeClauseLF),
+ 	nbar(Rels, Relations, [X]>>(f(RelativeClauseLF, X), NP), LogicalForm).
 
 % default: ignore this dependency
 nbar([_ | Rels], Relations, NP, LogicalForm) :-
@@ -136,51 +137,51 @@ dp([rel('det:predet', _, _) | Rels], POS, Relations, LF, LogicalForm) :-
 	dp(Rels, POS, Relations, LF, LogicalForm).
 	
 % determiner: all, every
-dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
+dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, Det, 'DT')),
 	(	Det = all; Det = every),
-	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+LF; T)), LogicalForm).
+	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+(f(NP, X)); T)), LogicalForm).
 
 % determiner: the
-dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
+dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, the, 'DT')),
 	(	POS = 'NNS'	-> % check for plural nouns
-		dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+LF; T)), LogicalForm)
-	; 	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>Y^(\+LF; (X = Y, T))), LogicalForm)
+		dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+(f(NP, X)); T)), LogicalForm)
+	; 	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>Y^(\+(f(NP, X)); (X = Y, T))), LogicalForm)
 	).
 
 % determiner: a
-dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
+dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, a, 'DT')),
-	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(X^(LF, T))), LogicalForm).
+	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(X^(f(NP, X), T))), LogicalForm).
 
 % determiner: no
-dp([Rel | Rels], POS, Relations, X^LF, LogicalForm) :-
+dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('neg', _, word(_, _, no, 'DT')),
-	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(\+X^(LF, T))), LogicalForm).
+	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(\+X^(f(NP, X), T))), LogicalForm).
 
 % determiner: default (do nothing for this relation)
-dp([Rel | Rels], POS, Relations, LF, LogicalForm) :-
+dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('det', _, _),
-	dp(Rels, POS, Relations, LF, LogicalForm).
+	dp(Rels, POS, Relations, NP, LogicalForm).
 
 % ----- Subjects are constructed via generalized quantifiers -----
-subject_dp(Word, Relations, X^NP, LogicalForm) :-
+subject_dp(Word, Relations, [X]>>NP, LogicalForm) :-
 	Word = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
-	dp(HeadRels, POS, Relations, X^NP, DP),
+	dp(HeadRels, POS, Relations, NP, DP),
 	(	DP = {_, P}/_>>_ ->
-		lambda_calls(DP, [beta(P, [X])], LogicalForm)
+		lambda_calls(DP, [f(P, [X])], LogicalForm)
 	;	(	DP = X^DP1,
-			LogicalForm = {}/[P]>>(X^(DP1, beta(P, [X])))
+			LogicalForm = {}/[P]>>(X^(DP1, f(P, [X])))
 		)
 	).
 
 % ----- Object DPs add an object event predicate to the event -----
-object_dp(Word, Relations, X^NP, LogicalForm) :-
+object_dp(Word, Relations, [X]>>NP, LogicalForm) :-
 	Word = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
-	dp(HeadRels, POS, Relations, X^NP, DP),
+	dp(HeadRels, POS, Relations, [X]>>NP, DP),
 	DP = {_, E}/_>>_,
 	lambda_calls(DP, [object(E, X)], LogicalForm).
 
@@ -193,19 +194,19 @@ predicate(rel(_, _, Word2), Relations, LogicalForm) :-
 	ObjectRel = rel(dobj, Word2, _),
 	(	member(ObjectRel, Relations) ->
 		(	object(ObjectRel, Relations, ObjectLF),
-			LogicalForm = {}/[X]>>E^(Predicate, subject(E, X), beta(ObjectLF, [E]))
+			LogicalForm = {}/[X]>>E^(Predicate, subject(E, X), f(ObjectLF, [E]))
 		)
 	;	LogicalForm = {}/[X]>>E^(Predicate, subject(E, X))
 	).
 
 
 subject(rel(_, _, Word2), Relations, LogicalForm) :-
-	np(Word2, Relations, X^NP),
-	subject_dp(Word2, Relations, X^NP, LogicalForm).
+	np(Word2, Relations, NP),
+	subject_dp(Word2, Relations, NP, LogicalForm).
 
 object(rel(_, _, Word2), Relations, LogicalForm) :-
-	np(Word2, Relations, X^NP),
-	object_dp(Word2, Relations, X^NP, LogicalForm).
+	np(Word2, Relations, NP),
+	object_dp(Word2, Relations, NP, LogicalForm).
 
 
 
@@ -220,10 +221,18 @@ relative_adverb(when).
 relative_adverb(where).
 relative_adverb(why).
 
-
-relative_clause(rel('acl:relcl', _, Word2), Relations, X, RelativeClauseLF).
-
-
+% object relative
+relative_clause(rel('acl:relcl', _, Word2), Relations, RelativeClauseLF) :-
+	SubjectRel = rel(nsubj, Word2, SubjectHead),
+	member(SubjectRel, Relations),
+	ObjectRel = rel(dobj, Word2, word(_, _, ObjectHeadWord, _)),
+	(	relative_pronoun(ObjectHeadWord)
+	;	relative_adverb(ObjectHeadWord)
+	),
+	subject(SubjectRel, Relations, Subject),
+	Word2 = word(_, _, PredicateHeadWord, _),
+	Predicate =.. [PredicateHeadWord, E],
+	RelativeClauseLF = [Y]>>f({}/[X]>>E^(Predicate, subject(E, X), object(E, Y)), Subject).
 
 
 
