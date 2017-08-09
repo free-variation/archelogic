@@ -7,6 +7,7 @@ debug(Value) :-
 	print(Value),
 	nl.
 
+
 lambda_reduce(F, Goal) :-
 	nonvar(F),
 	F = f(Lambda, Vars), 
@@ -107,20 +108,22 @@ np(Word, Relations, LogicalForm) :-
 	Word = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	(	POS = 'NNP' ->
-		NP = (HeadLemma = X)
-	;	NP =.. [HeadLemma, X]
-	),
-	nbar(HeadRels, Relations, [X]>>NP, LogicalForm).
+		LogicalForm = HeadLemma
+	;	(	NP =.. [HeadLemma, X],
+			nbar(HeadRels, Relations, {}/[X]>>NP, LogicalForm)
+		)
+	).
+	
 
 % base case: no modifiers
 nbar([], _, LogicalForm, LogicalForm).
 
 % relative clause
-nbar([Rel | Rels], Relations, [X]>>NP, LogicalForm) :-
+nbar([Rel | Rels], Relations, {}/[X]>>NP, LogicalForm) :-
  	Rel = rel('acl:relcl', _, _),
  	relative_clause(Rel, Relations, RelativeClauseLF),
  	debug(RelativeClauseLF),
- 	nbar(Rels, Relations, [X]>>(f(RelativeClauseLF, X), NP), LogicalForm).
+ 	nbar(Rels, Relations, {}/[X]>>(f(RelativeClauseLF, X), NP), LogicalForm).
 
 % default: ignore this dependency
 nbar([_ | Rels], Relations, NP, LogicalForm) :-
@@ -166,7 +169,8 @@ dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	dp(Rels, POS, Relations, NP, LogicalForm).
 
 % ----- Subjects are constructed via generalized quantifiers -----
-subject_dp(Word, Relations, [X]>>NP, LogicalForm) :-
+subject_dp(Word, Relations, NP, LogicalForm) :-
+	NP = [X]>>_,
 	Word = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	dp(HeadRels, POS, Relations, NP, DP),
@@ -177,11 +181,15 @@ subject_dp(Word, Relations, [X]>>NP, LogicalForm) :-
 		)
 	).
 
+% individual as subject
+subject_dp(Word, Relations, NP, {}/[P]>>(X^(X = NP, f(P, [X])))) :-
+	atom(NP).
+
 % ----- Object DPs add an object event predicate to the event -----
-object_dp(Word, Relations, [X]>>NP, LogicalForm) :-
+object_dp(Word, Relations, {}/[X]>>NP, LogicalForm) :-
 	Word = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
-	dp(HeadRels, POS, Relations, [X]>>NP, DP),
+	dp(HeadRels, POS, Relations, {}/[X]>>NP, DP),
 	DP = {_, E}/_>>_,
 	lambda_calls(DP, [object(E, X)], LogicalForm).
 
