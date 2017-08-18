@@ -116,3 +116,9 @@ parse(19,"The cat that meows eats.", [
 	rel('nsubj',word('4','meows','meow','VBZ'),word('3','that','that','WDT')),
 	rel('nsubj',word('5','eats','eat','VBZ'),word('2','cat','cat','NN')),
 	rel('punct',word('5','eats','eat','VBZ'),word('6','.','.','.')),19]).
+parse(20,"John knows a unicorn.", [
+	rel('root',word('0','','',''),word('2','knows','know','VBZ')),
+	rel('nsubj',word('2','knows','know','VBZ'),word('1','John','John','NNP')),
+	rel('dobj',word('2','knows','know','VBZ'),word('4','unicorn','unicorn','NN')),
+	rel('punct',word('2','knows','know','VBZ'),word('5','.','.','.')),
+	rel('det',word('4','unicorn','unicorn','NN'),word('3','a','a','DT')),20]).

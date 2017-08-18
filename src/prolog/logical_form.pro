@@ -170,7 +170,7 @@ dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 
 % ----- Subjects are constructed via generalized quantifiers -----
 subject_dp(Word, Relations, NP, LogicalForm) :-
-	NP = [X]>>_,
+	NP = {}/[X]>>_,
 	Word = word(WordIndex, _, HeadLemma, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	dp(HeadRels, POS, Relations, NP, DP),
