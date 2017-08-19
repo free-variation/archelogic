@@ -143,25 +143,25 @@ dp([rel('det:predet', _, _) | Rels], POS, Relations, LF, LogicalForm) :-
 dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, Det, 'DT')),
 	(	Det = all; Det = every),
-	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+(f(NP, X)); T)), LogicalForm).
+	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+(f(NP, [X])); T)), LogicalForm).
 
 % determiner: the
 dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, the, 'DT')),
 	(	POS = 'NNS'	-> % check for plural nouns
-		dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+(f(NP, X)); T)), LogicalForm)
-	; 	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>Y^(\+(f(NP, X)); (X = Y, T))), LogicalForm)
+		dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+(f(NP, [X])); T)), LogicalForm)
+	; 	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>Y^(\+(f(NP, [X])); (X = Y, T))), LogicalForm)
 	).
 
 % determiner: a
 dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, a, 'DT')),
-	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(X^(f(NP, X), T))), LogicalForm).
+	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(X^(f(NP, [X]), T))), LogicalForm).
 
 % determiner: no
 dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('neg', _, word(_, _, no, 'DT')),
-	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(\+X^(f(NP, X), T))), LogicalForm).
+	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>(\+X^(f(NP, [X]), T))), LogicalForm).
 
 % determiner: default (do nothing for this relation)
 dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
