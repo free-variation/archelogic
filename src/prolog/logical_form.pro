@@ -60,7 +60,7 @@ skolemize(X, Vars, _) :-
 	gensym(s, Functor),
 	X =.. [Functor | Vars1].
 
-raise_existential_q(Vars, X^(Terms-T), BareTerms) :-
+raise_existential_q(Vars, _^(Terms-T), BareTerms) :-
 	!,
 	T = [],
 	% skolemize(X, Vars, Terms),
@@ -170,8 +170,7 @@ dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 
 % ----- Subjects are constructed via generalized quantifiers -----
 subject_dp(Word, Relations, NP, LogicalForm) :-
-	NP = {}/[_]>>_,
-	Word = word(WordIndex, _, HeadLemma, POS),
+	Word = word(WordIndex, _, _, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	dp(HeadRels, POS, Relations, NP, DP),
 	(	DP = {X, P}/_>>_ ->
@@ -182,12 +181,12 @@ subject_dp(Word, Relations, NP, LogicalForm) :-
 	).
 
 % individual as subject
-subject_dp(Word, Relations, NP, {}/[P]>>(X^(X = NP, f(P, [X])))) :-
+subject_dp(_, _, NP, {}/[P]>>(X^(X = NP, f(P, [X])))) :-
 	atom(NP).
 
 % ----- Object DPs add an object event predicate to the event -----
 object_dp(Word, Relations, NP, LogicalForm) :-
-	Word = word(WordIndex, _, HeadLemma, POS),
+	Word = word(WordIndex, _, _, POS),
 	relations_for_governor(WordIndex, Relations, HeadRels),
 	dp(HeadRels, POS, Relations, NP, DP),
 	DP = {X, E}/_>>_,
