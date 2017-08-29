@@ -28,7 +28,7 @@ test(logical_form_n) :-
 test(logical_form_iv) :-
 	parse(0, _, Rels),
 	logical_form(Rels, LF),
-	LF = f({}/[P]>>_X^('John'=X, f(P, [X])), [{}/[Y]>>E^(run(E), subject(E, Y))]).
+	LF = f({}/[P]>>X^('John'=X, f(P, [X])), [{}/[Y]>>E^(run(E), subject(E, Y))]).
 
 test(logical_form_iv_reduced) :-
 	lf(0, RedLF),
@@ -36,11 +36,11 @@ test(logical_form_iv_reduced) :-
 
 test(logical_form_iv_all) :-
 	lf(5, RedLF),
-	RedLF = (\+cat(X); E^(run(E), subject(E, X))).
+	RedLF = \+(X^(cat(X), \+(E^(run(E), subject(E, X))))).
 
 test(logical_form_iv_the) :-
 	lf(6, RedLF),
-	RedLF = Y^(\+cat(X); X = Y, E^(run(E), subject(E, X))).
+	RedLF = Y^(cat(Y), \+(X^(cat(X), \+(X = Y, E^(run(E), subject(E, X)))))).
 
 test(logical_form_iv_a) :-
 	lf(7, RedLF),
@@ -60,7 +60,7 @@ test(logical_form_tv_obj_a) :-
 
 test(logical_form_tv_obj_all) :-
 	lf(11, RedLF),
-	RedLF = X^('Django'= X, E^(love(E), subject(E, X), (\+cat(Y); object(E, Y)))).
+	RedLF = X^('Django'= X, E^(love(E), subject(E, X), \+(Y^(cat(Y), \+object(E, Y))))).
 
 test(logical_form_tv_obj_no) :-
 	lf(12, RedLF),
@@ -68,15 +68,15 @@ test(logical_form_tv_obj_no) :-
 
 test(logical_form_tv_the_the) :-
 	lf(13, RedLF),
-	RedLF = Y^(\+cat(X); X = Y, E^(lick(E), subject(E, X), Z^(\+mat(U); U = Z, object(E, U)))).
+	RedLF = Y^(cat(Y), \+(X^(cat(X), \+(X = Y, E^(lick(E), subject(E, X), Z^(mat(Z), \+(U^(mat(U), \+(U = Z, object(E, U)))))))))).
 
 test(logical_form_tv_every_a) :-
 	lf(14, RedLF),
-	RedLF = (\+man(X); E^(love(E), subject(E, X), Y^(woman(Y), object(E, Y)))).
+	RedLF = \+(X^(man(X), \+(E^(love(E), subject(E, X), Y^(woman(Y), object(E, Y)))))).
 
 test(logical_form_tv_every_every) :-
 	lf(15, RedLF),
-	RedLF = (\+man(X); E^(love(E), subject(E, X), (\+woman(Y); object(E, Y)))).
+	RedLF = \+(X^(man(X), \+(E^(love(E), subject(E, X), \+(Y^(woman(Y), \+object(E, Y))))))).
 
 test(logical_form_iv_pl_def_subj) :-
 	lf(16, RedLF),
@@ -88,7 +88,7 @@ test(logical_form_iv_pl_iterated_dets) :-
 
 test(logical_form_tv_the_the_pl) :-
 	lf(18, RedLF),
-	RedLF = Y^(\+cat(X); X = Y, E^(lick(E), subject(E, X), (\+mat(U); object(E, U)))).
+	RedLF = Y^(cat(Y), \+(X^(cat(X), \+(X = Y, E^(lick(E), subject(E, X), (\+mat(U); object(E, U))))))).
 
 test(relative_pronoun_that) :-
 	relative_pronoun(that).
