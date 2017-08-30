@@ -1,12 +1,14 @@
 :- use_module(library(apply)).
 :- use_module(library(yall)).
 
+:- op(500, xfy, #).
 
 debug(Value) :-
 	nl, print('DEBUG '),
 	print(Value),
 	nl.
 
+#(_, _).
 
 lambda_reduce(F, Goal) :-
 	nonvar(F),
@@ -86,21 +88,6 @@ logical_form(RootRel, Relations, LogicalForm) :-
 % default: return the dependent as an entity
 logical_form(rel(_, _, word(_, Form, _, _)), _, Form).
 
-% ----- The core clause -----
-
-clause(Rel, Relations, LogicalForm) :-
-	Rel = rel(_, _, Word2),
-	Word2 = word(WordIndex, _, _, _),
-	relations_for_governor(WordIndex, Relations, PredRelations),
-
-	SubjectRel = rel(nsubj, Word2, _),
-	member(SubjectRel, PredRelations),
-	subject(SubjectRel, Relations, SubjectLF),
-
-	predicate(Rel, Relations, PredicateLF),
-	LogicalForm = f(SubjectLF, [PredicateLF]).
-
-
 % ----- Nominal Expressions -----
 
 % ----- noun phrases -----
@@ -147,11 +134,18 @@ dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	dp(Rels, POS, Relations, {X, P}/[T]>>({}/[P]>>(\+(X^(f(NP, [X]), \+T)))), LogicalForm).
 
 % determiner: the
-dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
+dp_the([Rel | Rels], POS, Relations, NP, LogicalForm) :-
 	Rel = rel('det', _, word(_, _, the, 'DT')),
 	(	POS = 'NNS'	-> % check for plural nouns
 		dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+(f(NP, [X])); T)), LogicalForm)
 	; 	dp(Rels, POS, Relations, {X,P}/[T]>>({}/[P]>>Y^(f(NP, [Y]), \+(X^(f(NP, [X]), \+(X=Y, T))))), LogicalForm)
+	).
+
+dp([Rel | Rels], POS, Relations, NP, LogicalForm) :-
+	Rel = rel('det', _, word(_, _, the, 'DT')),
+	(	POS = 'NNS'	-> % check for plural nouns
+		dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>(\+(f(NP, [X])); T)), LogicalForm)
+	;	dp(Rels, POS, Relations, {X,P}/[T]>>({X}/[P]>>X#(f(NP, [X]), T)), LogicalForm)
 	).
 
 % determiner: a
@@ -215,6 +209,21 @@ subject(rel(_, _, Word2), Relations, LogicalForm) :-
 object(rel(_, _, Word2), Relations, LogicalForm) :-
 	np(Word2, Relations, NP),
 	object_dp(Word2, Relations, NP, LogicalForm).
+
+% ----- The core clause -----
+
+clause(Rel, Relations, LogicalForm) :-
+	Rel = rel(_, _, Word2),
+	Word2 = word(WordIndex, _, _, _),
+	relations_for_governor(WordIndex, Relations, PredRelations),
+
+	SubjectRel = rel(nsubj, Word2, _),
+	member(SubjectRel, PredRelations),
+	subject(SubjectRel, Relations, SubjectLF),
+
+	predicate(Rel, Relations, PredicateLF),
+	LogicalForm = f(SubjectLF, [PredicateLF]).
+
 
 
 
